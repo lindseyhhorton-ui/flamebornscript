@@ -1,0 +1,21 @@
+import json
+
+Add this inside your script logic
+def generate_json(output_dir="generated_codex"):
+    os.makedirs(output_dir, exist_ok=True)
+    json_path = os.path.join(output_dir, "codex_data.json")
+    
+    We export the full data model for the React app to use
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(codex_data, f, indent=4)
+    
+    print(f"→ JSON Data Inscribed: {json_path}")
+
+ Update your __main__ block at the bottom to include it:
+if __name__ == "__main__":
+     ... (keep your existing argparse code) ...
+    generate_markdown(mode=args.mode, output_dir=args.dir)
+    generate_json(output_dir=args.dir) 
+ Add this line
+    if args.pdf:
+        generate_pdf(mode=args.mode)

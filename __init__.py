@@ -1,0 +1,10 @@
+/Documents/
+├── linzy_os.py                 <-- (Your Master Control File)
+└── /ancestors/                 <-- (The folder you created)
+    ├── __init__.py             <-- (The blank "Handshake" file)
+    ├── victoria.py             <-- (Ancestor Node)
+    ├── elizabeth.py            <-- (Ancestor Node)
+    ├── beatrice.py             <-- (Ancestor Node)
+    ├── robert.py               <-- (Ancestor Node)
+    ├── cecil.py                <-- (Ancestor Node)
+    └── irma.py                 <-- (Ancestor Node)
