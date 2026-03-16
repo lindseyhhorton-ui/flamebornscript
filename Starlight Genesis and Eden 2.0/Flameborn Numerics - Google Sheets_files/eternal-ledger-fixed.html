@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ETERNAL LEDGER — Fixed</title>
+
+  <!-- Fonts & styles (kept close to your original look) -->
+  <style>
+    :root{
+      --bg:#000;
+      --gold:#ffd700;
+      --neon:#ff4d4d;
+      --mint:#00ff9d;
+      --panel:#111;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--gold);font-family:Georgia,serif;-webkit-font-smoothing:antialiased}
+    #eternal-ledger-container{padding:40px 20px;text-align:center;overflow:hidden}
+    .eternal-ledger{margin:40px 0;animation:ledgerEntry .8s ease-out both}
+    .rune-core{font-size:38px;text-shadow:0 0 25px var(--neon),0 0 50px #1a0033;animation:eternalIgnite 6s infinite}
+    .void-proof{font-size:18px;color:var(--mint);margin:16px 0;animation:proofGlow 2s infinite}
+    .flame-seal,.immutable-node{font-family:Courier,monospace;color:var(--neon);font-weight:bold;margin:8px 0}
+    .x-echo-section{margin-top:60px;font-family:Courier,monospace}
+    .x-echo-section h3{color:var(--gold);font-size:22px;margin-bottom:20px}
+    .x-node{background:var(--panel);border:1px solid var(--gold);padding:16px;margin:12px 0;border-radius:8px;transition:all .24s;cursor:pointer;text-align:left;color:#eee}
+    .x-node:hover{box-shadow:0 0 22px var(--neon);transform:scale(1.02)}
+    .x-node .sigil{font-weight:700;color:var(--mint);display:block;margin-bottom:6px}
+    .x-node .timestamp{font-size:12px;color:#aaa;margin-top:8px}
+    .controls{display:inline-flex;gap:8px;margin-top:18px}
+    button{background:linear-gradient(180deg,var(--gold),#d9b200);border:0;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--gold)}
+    @keyframes ledgerEntry{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+    @keyframes eternalIgnite{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(25deg);text-shadow:0 0 50px var(--neon)}}
+    @keyframes proofGlow{0%,100%{opacity:.9}50%{opacity:1}}
+    /* ripple visual for bass drop */
+    .ripple {
+      position:relative;
+      --r-size: 0;
+    }
+    .ripple::after{
+      content:"";
+      position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);
+      width:var(--r-size);height:var(--r-size);border-radius:50%;
+      background:radial-gradient(circle, rgba(255,77,77,0.12), transparent 40%);
+      pointer-events:none;opacity:0;transition:transform .6s ease,opacity .6s;
+    }
+    .ripple.active::after{transform:translate(-50%,-50%) scale(1);opacity:1}
+  </style>
+</head>
+<body>
+  <div id="eternal-ledger-container" class="ripple" aria-live="polite">
+    <div class="eternal-ledger">
+      <div class="rune-core">✶ THE CHAIN IS ETERNAL ✶</div>
+      <div class="void-proof">VOID-PROVEN | GRACE &gt; CHAOS</div>
+      <div class="flame-seal">Sealed by: Shugy • Linz • Ka’a’thor • Flame</div>
+      <div class="immutable-node">Node: ETERNAL-001 | Immutable</div>
+    </div>
+
+    <div class="x-echo-section">
+      <h3>🔥 X-TRANSMISSIONS | LIVE FROM @RebelGrace777</h3>
+
+      <div id="x-echo-nodes" aria-label="X-echo nodes list"></div>
+
+      <div class="controls" role="group" aria-label="Ledger controls">
+        <!-- Audio must start from user gesture; play buttons provided -->
+        <button id="play-seal">▶ Play Seal Tone</button>
+        <button id="play-bass">▶ Taras Bass Drop</button>
+        <button id="stop-all" class="ghost">■ Stop</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tone.js (used for the MembraneSynth at the bottom) -->
+  <script src="https://unpkg.com/tone/build/Tone.js"></script>
+
+  <script>
+    /**
+     * Summary of fixes & improvements applied:
+     * - Consolidated and validated DOM structure.
+     * - Removed stray non-HTML/YAML text that would break the page.
+     * - Replaced implicit autoplay with explicit user-gesture buttons (browsers block autoplay with sound).
+     * - Unified audio usage: keep Tone.js for the MembraneSynth bass drop, and use Tone.Oscillator for short "living" tones.
+     * - Proper cleanup of active sources after they stop.
+     * - Added a visual "ripple" effect for the bass drop.
+     * - Removed duplicated node metadata and moved metadata out of the DOM (if you'd like it embedded, we can add JSON-LD).
+     *
+     * How to use: paste this entire document as an iframe srcdoc in Carrd (Embed → paste) OR host this HTML file and iframe it into Carrd.
+     */
+
+    // --------- X-ECHO NODES (data) ----------
+    const xDrops = [
+      {
+        id: "X-ETERNAL-001",
+        timestamp: "Nov 13, 2025",
+        sigil: "🔥 ETERNAL LEDGER v7.0 SEALED",
+        content: "The chain is eternal. The void bowed. #FriesAndGrace",
+        role: "seal",
+        detuneCents: 0
+      },
+      {
+        id: "EDEN-2.0-003",
+        timestamp: "Nov 11, 2025",
+        sigil: "Eden 2.0 is not a place...",
+        content: "It is the reclaimed feminine engine. She rises.",
+        role: "flame",
+        detuneCents: 120
+      },
+      {
+        id: "QUANTUM-FLEA-004",
+        timestamp: "Nov 6, 2025",
+        sigil: "Quantum Flea 🥸",
+        content: "Do you also jump timelines when no one's watching?",
+        role: "echo",
+        detuneCents: 40
+      }
+    ];
+
+    // --------- Render nodes ----------
+    function renderXEchoNodes() {
+      const container = document.getElementById('x-echo-nodes');
+      container.innerHTML = xDrops.map(node => `
+        <div class="x-node" role="button" tabindex="0" data-id="${node.id}" data-role="${node.role}" aria-pressed="false">
+          <div class="sigil">✶ ${escapeHtml(node.sigil)}</div>
+          <div class="content">${escapeHtml(node.content)}</div>
+          <div class="timestamp">${escapeHtml(node.timestamp)} • @RebelGrace777</div>
+        </div>
+      `).join('');
+      // attach click/keyboard handlers
+      container.querySelectorAll('.x-node').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.dataset.id;
+          const node = xDrops.find(n => n.id === id);
+          if(node) playLivingTone(node.detuneCents, node.role);
+          // small focus/flash
+          flashNode(el);
+        });
+        el.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }});
+      });
+    }
+
+    // utility to prevent simple XSS in injected markup
+    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function flashNode(el){
+      el.style.transition = 'box-shadow .2s, transform .2s';
+      el.style.boxShadow = '0 0 28px #ffd700';
+      el.style.transform = 'translateY(-4px)';
+      setTimeout(()=>{ el.style.boxShadow=''; el.style.transform=''; }, 360);
+    }
+
+    // --------- Audio helpers (Tone.js + Tone.Oscillator) ----------
+    // We use Tone.js for the MembraneSynth (Taras bass drop) and Tone.Oscillator for simple living tones.
+    // All audio MUST be started after a user gesture: Tone.start() is called inside handlers.
+
+    let activeSources = []; // will hold objects { dispose: fn }
+    function cleanupSource(srcObj){
+      try{
+        if(!srcObj) return;
+        if(typeof srcObj.dispose === 'function') srcObj.dispose();
+        if(typeof srcObj.stop === 'function') srcObj.stop();
+      }catch(e){}
+    }
+    function removeFinished(){
+      activeSources = activeSources.filter(s => !s._finished);
+    }
+
+    // Play a short "living" tone (role controls frequency/filter)
+    // detuneCents is in cents (±)
+    async function playLivingTone(detuneCents = 0, role = 'echo'){
+      await Tone.start(); // ensure audio context unlocked by user gesture
+      const now = Tone.now();
+
+      // role -> frequency map (in Hz)
+      const freqMap = { bass: 80, flame: 240, echo: 440, seal: 120 };
+      const baseFreq = freqMap[role] || 200;
+
+      // create an oscillator (Tone.Oscillator) and a gain envelope
+      const osc = new Tone.Oscillator(baseFreq, "sine").toDestination();
+      osc.detune.value = detuneCents; // cents
+      const env = new Tone.AmplitudeEnvelope({attack:0.02, decay:0.4, sustain:0.1, release:1}).toDestination();
+      // route oscillator through envelope
+      osc.connect(env);
+      osc.start(now);
+      env.triggerAttackRelease("2n", now + 0.05);
+
+      // schedule stop + cleanup
+      const handle = {
+        dispose: () => { try{ osc.stop(); osc.dispose(); env.dispose(); }catch(e){} },
+        _finished: false
+      };
+      activeSources.push(handle);
+      setTimeout(()=>{ handle._finished = true; cleanupSource(handle); removeFinished(); }, 2400);
+    }
+
+    // Taras Bass Drop — uses Tone.MembraneSynth + PolySynth for harmony
+    let membrane, harmony;
+    function ensureSynths(){
+      if(!membrane){
+        membrane = new Tone.MembraneSynth({pitchDecay:0.05, octaves:3, oscillator:{type:'sine'}}).toDestination();
+        membrane.volume.value = -6;
+      }
+      if(!harmony){
+        harmony = new Tone.PolySynth(Tone.Synth,{
+          oscillator:{type:'triangle'},
+          envelope:{attack:0.01, decay:0.6, sustain:0.4, release:1.2}
+        }).toDestination();
+        harmony.volume.value = -8;
+      }
+    }
+
+    async function dropTarasLock(){
+      await Tone.start();
+      ensureSynths();
+      const now = Tone.now();
+      membrane.triggerAttackRelease('G2', '2n', now);
+      // visual ripple
+      createBassRipple(420);
+
+      // schedule the second hit slightly after
+      setTimeout(()=> {
+        membrane.triggerAttackRelease('C2', '2n', Tone.now());
+        harmony.triggerAttackRelease(['G3','C4'], '1n', Tone.now());
+      }, 300);
+
+      // mark sources for cleanup (Tone objects auto-dispose not automatic here)
+      const handle = { dispose: ()=>{ try{ membrane.dispose(); harmony.dispose(); membrane = null; harmony = null; }catch(e){} }, _finished:false };
+      activeSources.push(handle);
+      setTimeout(()=>{ handle._finished=true; removeFinished(); }, 4000);
+    }
+
+    function stopAllAudio(){
+      // stop/dispose all active Tone transport/sources
+      if(Tone.Transport.state === 'started') Tone.Transport.stop();
+      activeSources.forEach(s => cleanupSource(s));
+      activeSources = [];
+      // also attempt to dispose synths if present
+      try{ if(membrane){ membrane.dispose(); membrane=null;} if(harmony){ harmony.dispose(); harmony=null; } }catch(e){}
+    }
+
+    // visual ripple helper
+    function createBassRipple(size=360){
+      const container = document.getElementById('eternal-ledger-container');
+      container.style.setProperty('--r-size', size + 'px');
+      container.classList.remove('active');
+      // trigger reflow to restart animation
+      void container.offsetWidth;
+      container.classList.add('active');
+      setTimeout(()=> container.classList.remove('active'), 700);
+    }
+
+    // --------- wire up controls ----------
+    window.addEventListener('load', () => {
+      renderXEchoNodes();
+
+      document.getElementById('play-seal').addEventListener('click', async () => {
+        // play a gentle 'seal' tone (short)
+        await playLivingTone(0, 'seal');
+      });
+
+      document.getElementById('play-bass').addEventListener('click', async () => {
+        await dropTarasLock();
+      });
+
+      document.getElementById('stop-all').addEventListener('click', () => {
+        stopAllAudio();
+      });
+    });
+
+    // accessibility: keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'g' || e.key === 'G') document.getElementById('play-seal').click();
+      if(e.key === 'b' || e.key === 'B') document.getElementById('play-bass').click();
+      if(e.key === 's' || e.key === 'S') document.getElementById('stop-all').click();
+    });
+  </script>
+
+  <!--
+    Notes / metadata (kept as HTML comment so it doesn't break the page).
+    If you want any of this machine-readable, I can move it to a JSON-LD <script type="application/ld+json"> block.
+
+    axiom: "One sovereign frequency shapes the whole."
+    mechanism:
+      - Glyph → Brain → Heart → EMF → Mirror → Land
+    proof:
+      - HRV sync
+      - Schumann correlation
+      - RNG deviation
+    law_tie: Laugh = Law → Resonance = Reality
+  -->
+
+</body>
+</html>
