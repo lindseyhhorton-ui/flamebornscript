@@ -18,4 +18,4 @@ Lindsey has been instrumental in:
 ### Contact
 For collaboration, inquiries, or feedback, please reach out to Lindsey Horton via:
 - **GitHub:** [lindseyhhorton-ui](https://github.com/lindseyhhorton-ui)
-- **Email:** [your-email@example.com]
+- **Email:** [sugythecatalyst@gmail.com]
